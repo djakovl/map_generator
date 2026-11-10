@@ -28,6 +28,8 @@ go.work.sum
 # env file
 .env
 *.png
+*.csv
 # Editor/IDE
  .idea/
  .vscode/
+ results/
