@@ -192,6 +192,12 @@ func run() error {
 		"Поле", "Время", "Минимум", "Максимум", "Среднее",
 	)
 
+	classCfg := terrain.DefaultClassifyConfig(config.SeaLevel)
+	types, err := terrain.Classify(world, classCfg)
+	if err != nil {
+		return fmt.Errorf("ошибка классификации: %w", err)
+	}
+
 	fields := []struct {
 		name   string
 		file   string
@@ -201,6 +207,7 @@ func run() error {
 		{"Высота", "height.csv", world.Elevation, timings.Elevation.String()},
 		{"Температура", "temperature.csv", world.Temperature, timings.Temperature.String()},
 		{"Влажность", "moisture.csv", world.Moisture, timings.Moisture.String()},
+		{"Местность", "terrain.csv", terrainTypeToFloat(types), timings.Total.String()},
 	}
 
 	for _, field := range fields {
@@ -240,4 +247,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Ошибка:", err)
 		os.Exit(1)
 	}
+}
+func terrainTypeToFloat(types []terrain.TerrainType) []float64 {
+	result := make([]float64, len(types))
+	for i, t := range types {
+		result[i] = float64(t)
+	}
+	return result
 }
