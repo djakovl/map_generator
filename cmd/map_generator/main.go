@@ -126,6 +126,8 @@ func run() error {
 	flag.IntVar(&config.Workers, "workers", config.Workers, "Количество работников")
 	flag.IntVar(&config.Procs, "procs", config.Procs, "GOMAXPROCS")
 
+	flag.IntVar(&config.SmoothingPasses, "smooth-passes", config.SmoothingPasses, "Количество проходов сглаживания высоты")
+
 	flag.Float64Var(&config.ExtentX, "extent-x", config.ExtentX, "Размер области по X")
 	flag.Float64Var(&config.ExtentY, "extent-y", config.ExtentY, "Размер области по Y")
 	flag.Float64Var(&config.SeaLevel, "sea-level", config.SeaLevel, "Уровень моря")
@@ -138,6 +140,9 @@ func run() error {
 		&config.HeightCooling, "height-cooling",
 		config.HeightCooling, "Понижение температуры с высотой",
 	)
+
+	
+
 
 	octaves := config.HeightNoise.Octaves
 	flag.IntVar(&octaves, "octaves", octaves, "Число октав для всех полей")

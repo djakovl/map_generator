@@ -25,6 +25,8 @@ type Config struct {
 	HeightNoise      NoiseConfig
 	TemperatureNoise NoiseConfig
 	MoistureNoise    NoiseConfig
+
+	SmoothingPasses int
 }
 
 
@@ -56,6 +58,8 @@ func DefaultConfig() Config {
 		HeightNoise:      noise,
 		TemperatureNoise: noise,
 		MoistureNoise:    noise,
+
+		SmoothingPasses: 2,
 	}
 }
 
@@ -67,7 +71,9 @@ func (config Config) Validate() error {
 	if config.Width <= 0 || config.Height <= 0 {
 		return fmt.Errorf("width и height должны быть положительными")
 	}
-
+	if config.SmoothingPasses < 0 {
+		return fmt.Errorf("smoothing-passes должен быть >= 0")
+	}
 	maxInt := int(^uint(0) >> 1)
 	if config.Width > maxInt/config.Height {
 		return fmt.Errorf("слишком большое количество клеток")
@@ -348,6 +354,15 @@ func (generator *Generator) Generate() (World, Timings) {
 	if err != nil {
 		panic(err)
 	}
+
+	if config.SmoothingPasses > 0 {
+		smoothed, err := SmoothField(world.Elevation, config.Width, config.Height, config.SmoothingPasses)
+		if err != nil {
+			panic(err) 
+		}
+		copy(world.Elevation, smoothed)
+	}
+
 	timings.Elevation = time.Since(start)
 
 	start = time.Now()
