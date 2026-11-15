@@ -16,7 +16,7 @@ type TerrainProfile struct {
 
 func profileFromSeed(seed int64) TerrainProfile {
 	// Отдельный поток: не зависит от генераторов трёх полей.
-	random := rand.New(rand.NewSource(deriveSeed(seed, 100)))
+	random := rand.New(rand.NewSource(deriveSeed(seed, 100))) // #nosec G404 -- deterministic map gen requires seeded math/rand; crypto/rand breaks reproducibility (TG01/TG02)
 
 	between := func(low, high float64) float64 {
 		return low + random.Float64()*(high-low)

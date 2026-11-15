@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strconv"
+
 	"map_generator/internal/terrain"
 )
 
@@ -77,13 +77,26 @@ func printElevationDistribution(values []float64, seaLevel float64) {
 	)
 }
 
+// writeMatrix writes a 2D float matrix as CSV into root.
+// All access is scoped under root: path traversal is rejected by the OS,
+// not by string checks.
+func writeMatrix(root *os.Root, name string, width, height int, values []float64) (err error) {
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("некорректные размеры матрицы: %dx%d", width, height)
+	}
+	if len(values) != width*height {
+		return fmt.Errorf("длина массива %d не соответствует %dx%d", len(values), width, height)
+	}
 
-func writeMatrix(path string, width, height int, values []float64) error {
-	file, err := os.Create(path)
+	file, err := root.Create(name)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	buffer := bufio.NewWriter(file)
 	writer := csv.NewWriter(buffer)
@@ -91,11 +104,8 @@ func writeMatrix(path string, width, height int, values []float64) error {
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			row[x] = strconv.FormatFloat(
-				values[y*width+x], 'g', 17, 64,
-			)
+			row[x] = strconv.FormatFloat(values[y*width+x], 'g', 17, 64)
 		}
-
 		if err := writer.Write(row); err != nil {
 			return err
 		}
@@ -105,16 +115,11 @@ func writeMatrix(path string, width, height int, values []float64) error {
 	if err := writer.Error(); err != nil {
 		return err
 	}
-	if err := buffer.Flush(); err != nil {
-		return err
-	}
-
-	return file.Close()
+	return buffer.Flush()
 }
 
 func run() error {
 	config := terrain.DefaultConfig()
-	
 
 	export := false
 	output := "results"
@@ -208,19 +213,28 @@ func run() error {
 
 	fmt.Printf("\nСуммарное время генерации: %s\n", timings.Total)
 	printElevationDistribution(world.Elevation, config.SeaLevel)
-	
+
 	if !export {
 		return nil
 	}
 
-	if err := os.MkdirAll(output, 0o755); err != nil {
-		return err
+	if err := os.MkdirAll(output, 0o750); err != nil {
+		return fmt.Errorf("создание каталога %q: %w", output, err)
 	}
 
+	root, err := os.OpenRoot(output)
+	if err != nil {
+		return fmt.Errorf("открытие каталога %q: %w", output, err)
+	}
+	defer func() {
+		if closeErr := root.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
 	for _, field := range fields {
-		path := filepath.Join(output, field.file)
 		if err := writeMatrix(
-			path, world.Width, world.Height, field.values,
+			root, field.file, world.Width, world.Height, field.values,
 		); err != nil {
 			return fmt.Errorf("экспорт %s: %w", field.file, err)
 		}

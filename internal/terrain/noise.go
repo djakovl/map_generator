@@ -10,7 +10,7 @@ type Perlin struct {
 }
 
 func NewPerlin(seed int64) *Perlin {
-	random := rand.New(rand.NewSource(seed))
+	random := rand.New(rand.NewSource(seed)) // #nosec G404 -- permutation must be reproducible from seed; crypto/rand unsuitable for procedural gen
 	values := random.Perm(256)
 
 	noise := &Perlin{}

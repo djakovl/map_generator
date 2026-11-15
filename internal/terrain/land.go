@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-func EnsureMinLand(values []float64, seaLevel float64, minLandFraction float64,) (float64, error) {
+func EnsureMinLand(values []float64, seaLevel float64, minLandFraction float64) (float64, error) {
 	if len(values) == 0 {
 		return 0, fmt.Errorf("пустой массив высот")
 	}
