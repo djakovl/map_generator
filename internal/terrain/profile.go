@@ -15,8 +15,7 @@ type TerrainProfile struct {
 }
 
 func profileFromSeed(seed int64) TerrainProfile {
-	// Отдельный поток: не зависит от генераторов трёх полей.
-	random := rand.New(rand.NewSource(deriveSeed(seed, 100)))
+	random := rand.New(rand.NewSource(deriveSeed(seed, 100))) // #nosec G404 -- deterministic map gen requires seeded math/rand; crypto/rand breaks reproducibility (TG01/TG02)
 
 	between := func(low, high float64) float64 {
 		return low + random.Float64()*(high-low)
@@ -24,8 +23,6 @@ func profileFromSeed(seed int64) TerrainProfile {
 
 	switch choice := random.Float64(); {
 	case choice < 0.30:
-		// Низкая область: больше воды, слабый рельеф,
-		// отдельная горная добавка полностью отключена.
 		return TerrainProfile{
 			Name:              "lowlands",
 			HeightOffset:      between(-0.25, -0.08),
@@ -36,7 +33,6 @@ func profileFromSeed(seed int64) TerrainProfile {
 		}
 
 	case choice < 0.65:
-		// Холмистая область; горная добавка слабая.
 		return TerrainProfile{
 			Name:              "hills",
 			HeightOffset:      between(-0.06, 0.10),
@@ -47,7 +43,6 @@ func profileFromSeed(seed int64) TerrainProfile {
 		}
 
 	default:
-		// Возвышенная область с широкими поднятиями и горами.
 		return TerrainProfile{
 			Name:              "highlands",
 			HeightOffset:      between(0.02, 0.16),

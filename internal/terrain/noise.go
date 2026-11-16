@@ -10,7 +10,7 @@ type Perlin struct {
 }
 
 func NewPerlin(seed int64) *Perlin {
-	random := rand.New(rand.NewSource(seed))
+	random := rand.New(rand.NewSource(seed)) // #nosec G404 -- permutation must be reproducible from seed; crypto/rand unsuitable for procedural gen
 	values := random.Perm(256)
 
 	noise := &Perlin{}
@@ -87,8 +87,6 @@ func (noise *Perlin) Noise2D(x, y float64) float64 {
 		gradient(topRight, localX-1, localY-1),
 		u,
 	)
-
-	// Единичные градиенты и консервативная фиксированная шкала.
 	return clamp(lerp(bottom, top, v)/math.Sqrt2, -1, 1)
 }
 
