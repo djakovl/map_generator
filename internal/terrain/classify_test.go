@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// TestV3TerrainProperties проверяет, что свойства местности зафиксированы и доступны (V3).
+
 func TestV3TerrainProperties(t *testing.T) {
-	// 1. Океан: должен быть водой, непроходимым, стоимость 0
+	
 	ocean, err := TerrainProps(TerrainOcean)
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +19,7 @@ func TestV3TerrainProperties(t *testing.T) {
 		t.Fatal("неверный цвет океана")
 	}
 
-	// 2. Лес: должен быть сушей, проходимым, стоимость > 0
+	
 	forest, err := TerrainProps(TerrainTemperateForest)
 	if err != nil {
 		t.Fatal(err)
@@ -28,23 +28,22 @@ func TestV3TerrainProperties(t *testing.T) {
 		t.Fatal("лес должен быть сушей, проходимым и иметь MoveCost > 0")
 	}
 
-	// 3. Проверка обработки ошибки для несуществующего кода
+	
 	_, err = TerrainProps(99)
 	if err == nil {
 		t.Fatal("ожидалась ошибка при запросе несуществующего кода местности (99)")
 	}
 }
 
-// TestWhittakerClassification проверяет логику диаграммы Уиттакера и высот (TV03, TV04, TV05).
+
 func TestWhittakerClassification(t *testing.T) {
-	// Тестовая конфигурация с явными порогами.
-	// Мы задаём их вручную, чтобы тестировать именно логику, а не калибровку.
+	
 	cfg := ClassifyConfig{
 		SeaLevel:      0.0,
 		BeachBand:     0.05,
 		MountainLevel: 0.60,
 		SnowLevel:     0.80,
-		PolarSnowTemp: -0.90, // ВАЖНО: ставим очень низкое значение, чтобы не ломать тесты холодных зон
+		PolarSnowTemp: -0.90, 
 		ColdTemp:      -0.30,
 		HotTemp:       0.30,
 		DryMoist:      0.30,
@@ -56,26 +55,23 @@ func TestWhittakerClassification(t *testing.T) {
 		want    TerrainType
 		note    string
 	}{
-		// 1. Высота (абсолютный приоритет)
+	
 		{-0.1, 0.0, 0.5, TerrainOcean, "ниже уровня моря"},
 		{0.02, 0.0, 0.5, TerrainBeach, "пляж"},
 		{0.85, 0.0, 0.5, TerrainSnow, "снег (высота)"},
 		{0.70, 0.0, 0.5, TerrainMountain, "горы"},
 
-		// 2. Полярный снег (приоритет над климатом, но ниже высоких гор)
+		
 		{0.10, -0.95, 0.5, TerrainSnow, "полярный снег в низине"},
 
-		// 3. Холодные зоны (t <= -0.30)
 		{0.10, -0.40, 0.20, TerrainTundra, "тундра (холод + сушь)"},
 		{0.10, -0.40, 0.80, TerrainColdRainforest, "хол. лес (холод + влага)"},
 		{0.10, -0.40, 0.50, TerrainTaiga, "тайга (холод + умеренно)"},
 
-		// 4. Жаркие зоны (t >= 0.30)
 		{0.10, 0.40, 0.20, TerrainDesert, "пустыня (жара + сушь)"},
 		{0.10, 0.40, 0.80, TerrainJungle, "джунгли (жара + влага)"},
 		{0.10, 0.40, 0.50, TerrainSavanna, "саванна (жара + умеренно)"},
 
-		// 5. Умеренные зоны (-0.30 < t < 0.30)
 		{0.10, 0.0, 0.20, TerrainSteppe, "степь (умеренно + сушь)"},
 		{0.10, 0.0, 0.80, TerrainTemperateRainforest, "умер. дожд. лес (умеренно + влага)"},
 		{0.10, 0.0, 0.50, TerrainTemperateForest, "лес (умеренно + умеренно)"},

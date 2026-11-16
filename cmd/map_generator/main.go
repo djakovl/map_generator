@@ -140,6 +140,8 @@ func run() error {
 		&config.HeightCooling, "height-cooling",
 		config.HeightCooling, "Понижение температуры с высотой",
 	)
+	var pngPath string
+	flag.StringVar(&pngPath, "png", "", "Путь для сохранения карты в формате PNG")
 
 	
 
@@ -198,6 +200,7 @@ func run() error {
 		return fmt.Errorf("ошибка классификации: %w", err)
 	}
 
+	
 	fields := []struct {
 		name   string
 		file   string
@@ -219,6 +222,13 @@ func run() error {
 	}
 
 	fmt.Printf("\nСуммарное время генерации: %s\n", timings.Total)
+	if pngPath != "" {
+		fmt.Printf("Генерация изображения %dx%d", world.Width, world.Height)
+		if err := terrain.ExportPNG(world, types, pngPath); err != nil {
+			return fmt.Errorf("ошибка экспорта PNG: %w", err)
+		}
+		fmt.Printf("Сохранено в: %s\n", pngPath)
+	}
 	printElevationDistribution(world.Elevation, config.SeaLevel)
 	
 	if !export {
@@ -228,7 +238,7 @@ func run() error {
 	if err := os.MkdirAll(output, 0o755); err != nil {
 		return err
 	}
-
+	
 	for _, field := range fields {
 		path := filepath.Join(output, field.file)
 		if err := writeMatrix(
