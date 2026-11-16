@@ -14,7 +14,10 @@ func generateForTest(t *testing.T, config Config) World {
 		t.Fatal(err)
 	}
 
-	world, _ := generator.Generate()
+	world, _, err := generator.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
 	return world
 }
 

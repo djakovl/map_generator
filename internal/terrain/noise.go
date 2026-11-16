@@ -87,8 +87,6 @@ func (noise *Perlin) Noise2D(x, y float64) float64 {
 		gradient(topRight, localX-1, localY-1),
 		u,
 	)
-
-	// Единичные градиенты и консервативная фиксированная шкала.
 	return clamp(lerp(bottom, top, v)/math.Sqrt2, -1, 1)
 }
 
