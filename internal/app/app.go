@@ -16,10 +16,11 @@ type Generator interface {
 
 type App struct {
 	Generator Generator
-	Exporter export.Exporter
-	Output io.Writer
-	Config terrain.Config
+	Exporter  export.Exporter
+	Output    io.Writer
+	Config    terrain.Config
 }
+
 func (application *App) Run() error {
 	runtime.GOMAXPROCS(application.Config.Procs)
 
@@ -28,7 +29,9 @@ func (application *App) Run() error {
 		return fmt.Errorf("генерация карты: %w", err)
 	}
 
-	application.report(world, timings)
+	if err := application.report(world, timings); err != nil {
+		return fmt.Errorf("отчёт: %w", err)
+	}
 
 	if application.Exporter != nil {
 		matrices := []export.Matrix{

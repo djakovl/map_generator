@@ -134,7 +134,7 @@ type World struct {
 	Elevation   []float64
 	Temperature []float64
 	Moisture    []float64
-	LandShift float64
+	LandShift   float64
 }
 
 type Timings struct {

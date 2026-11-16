@@ -1,8 +1,8 @@
 package export
 
 type Matrix struct {
-	Name string
-	File string
+	Name   string
+	File   string
 	Values []float64
 }
 

@@ -18,7 +18,11 @@ func readMatrix(t *testing.T, path string, width, height int) []float64 {
 	if err != nil {
 		t.Fatalf("чтение %s: %v", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			t.Errorf("закрытие %s: %v", path, closeErr)
+		}
+	}()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
@@ -53,7 +57,11 @@ func TestExportWritesAllMatrices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer exporter.Close()
+	defer func() {
+		if closeErr := exporter.Close(); closeErr != nil {
+			t.Errorf("закрытие экспортёра: %v", closeErr)
+		}
+	}()
 
 	matrices := []Matrix{
 		{Name: "высота", File: "height.csv", Values: []float64{0.1, 0.2, 0.3, 0.4}},
@@ -81,7 +89,11 @@ func TestExportRejectsTraversal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer exporter.Close()
+	defer func() {
+		if closeErr := exporter.Close(); closeErr != nil {
+			t.Errorf("закрытие экспортёра: %v", closeErr)
+		}
+	}()
 
 	matrices := []Matrix{
 		{Name: "побег", File: "../escape.csv", Values: []float64{1}},
@@ -102,7 +114,11 @@ func TestExportRejectsLengthMismatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer exporter.Close()
+	defer func() {
+		if closeErr := exporter.Close(); closeErr != nil {
+			t.Errorf("закрытие экспортёра: %v", closeErr)
+		}
+	}()
 
 	matrices := []Matrix{
 		{Name: "высота", File: "height.csv", Values: []float64{1, 2, 3}},
@@ -118,7 +134,11 @@ func TestExportRejectsInvalidDimensions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer exporter.Close()
+	defer func() {
+		if closeErr := exporter.Close(); closeErr != nil {
+			t.Errorf("закрытие экспортёра: %v", closeErr)
+		}
+	}()
 
 	matrices := []Matrix{
 		{Name: "высота", File: "height.csv", Values: []float64{}},

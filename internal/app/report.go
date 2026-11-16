@@ -32,14 +32,25 @@ func CalculateStatistics(values []float64) Statistics {
 	return result
 }
 
+type reportWriter struct {
+	output io.Writer
+	err    error
+}
+
+func (writer *reportWriter) printf(format string, args ...any) {
+	if writer.err != nil {
+		return
+	}
+	_, writer.err = fmt.Fprintf(writer.output, format, args...)
+}
+
 func (application *App) report(
 	world terrain.World, timings terrain.Timings,
-) {
-	output := application.Output
+) error {
+	writer := &reportWriter{output: application.Output}
 
 	profile := application.Generator.Profile()
-	fmt.Fprintf(
-		output,
+	writer.printf(
 		"Профиль: %s\n"+
 			"Смещение высоты: %.3f\n"+
 			"Амплитуда основы: %.3f\n"+
@@ -55,8 +66,7 @@ func (application *App) report(
 	)
 
 	config := application.Config
-	fmt.Fprintf(
-		output,
+	writer.printf(
 		"Карта: %dx%d\nSeed: %d\nЧанк: %dx%d\nWorkers: %d\nGOMAXPROCS: %d\n\n",
 		config.Width, config.Height,
 		config.Seed,
@@ -74,38 +84,37 @@ func (application *App) report(
 		{"Влажность", world.Moisture, timings.Moisture.String()},
 	}
 
-	fmt.Fprintf(
-		output,
+	writer.printf(
 		"%-14s %-14s %12s %12s %12s\n",
 		"Поле", "Время", "Минимум", "Максимум", "Среднее",
 	)
 
 	for _, field := range fields {
 		stats := CalculateStatistics(field.values)
-		fmt.Fprintf(
-			output,
+		writer.printf(
 			"%-14s %-14s %12.6f %12.6f %12.6f\n",
 			field.name, field.time, stats.Min, stats.Max, stats.Mean,
 		)
 	}
 
-	fmt.Fprintf(output, "\nСуммарное время генерации: %s\n", timings.Total)
+	writer.printf("\nСуммарное время генерации: %s\n", timings.Total)
 
 	if world.LandShift != 0 {
-		fmt.Fprintf(
-			output,
+		writer.printf(
 			"Коррекция уровня суши: %+.3f\n", world.LandShift,
 		)
 	}
 
-	printElevationDistribution(output, world.Elevation, config.SeaLevel)
+	writer.printElevationDistribution(world.Elevation, config.SeaLevel)
+
+	return writer.err
 }
 
-func printElevationDistribution(
-	output io.Writer, values []float64, seaLevel float64,
+func (writer *reportWriter) printElevationDistribution(
+	values []float64, seaLevel float64,
 ) {
 	if len(values) == 0 {
-		fmt.Fprintln(output, "\nРаспределение высоты: нет данных")
+		writer.printf("\nРаспределение высоты: нет данных\n")
 		return
 	}
 
@@ -128,8 +137,7 @@ func printElevationDistribution(
 
 	total := float64(len(values))
 
-	fmt.Fprintf(
-		output,
+	writer.printf(
 		"\nРаспределение высоты:\n"+
 			"  Ниже уровня моря %.3f: %.4f%% (%d клеток)\n"+
 			"  Выше 0.7: %.4f%%\n"+

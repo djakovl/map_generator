@@ -157,7 +157,11 @@ func TestRunWithCSVExporter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer csvExporter.Close()
+	defer func() {
+		if closeErr := csvExporter.Close(); closeErr != nil {
+			t.Errorf("закрытие экспортёра: %v", closeErr)
+		}
+	}()
 
 	application := testApp(generator, csvExporter)
 	if err := application.Run(); err != nil {

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	dirPerm os.FileMode = 0o750
+	dirPerm  os.FileMode = 0o750
 	filePerm os.FileMode = 0o600
 )
 
