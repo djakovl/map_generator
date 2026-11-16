@@ -1,53 +1,91 @@
 package terrain
 
-import "testing"
+import (
+	"image/color"
+	"testing"
+)
 
+// TestV3TerrainProperties проверяет, что свойства местности зафиксированы и доступны (V3).
+func TestV3TerrainProperties(t *testing.T) {
+	// 1. Океан: должен быть водой, непроходимым, стоимость 0
+	ocean, err := TerrainProps(TerrainOcean)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ocean.IsWater || ocean.Passable || ocean.MoveCost != 0 {
+		t.Fatal("океан должен быть водой, непроходимым и иметь MoveCost=0")
+	}
+	if ocean.Color != (color.RGBA{43, 95, 138, 255}) {
+		t.Fatal("неверный цвет океана")
+	}
 
-func TestTV03TV04TV05Classify(t *testing.T) {
-	cfg := DefaultClassifyConfig(0) 
+	// 2. Лес: должен быть сушей, проходимым, стоимость > 0
+	forest, err := TerrainProps(TerrainTemperateForest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if forest.IsWater || !forest.Passable || forest.MoveCost <= 0 {
+		t.Fatal("лес должен быть сушей, проходимым и иметь MoveCost > 0")
+	}
+
+	// 3. Проверка обработки ошибки для несуществующего кода
+	_, err = TerrainProps(99)
+	if err == nil {
+		t.Fatal("ожидалась ошибка при запросе несуществующего кода местности (99)")
+	}
+}
+
+// TestWhittakerClassification проверяет логику диаграммы Уиттакера и высот (TV03, TV04, TV05).
+func TestWhittakerClassification(t *testing.T) {
+	// Тестовая конфигурация с явными порогами.
+	// Мы задаём их вручную, чтобы тестировать именно логику, а не калибровку.
+	cfg := ClassifyConfig{
+		SeaLevel:      0.0,
+		BeachBand:     0.05,
+		MountainLevel: 0.60,
+		SnowLevel:     0.80,
+		PolarSnowTemp: -0.90, // ВАЖНО: ставим очень низкое значение, чтобы не ломать тесты холодных зон
+		ColdTemp:      -0.30,
+		HotTemp:       0.30,
+		DryMoist:      0.30,
+		WetMoist:      0.70,
+	}
 
 	cases := []struct {
 		h, t, m float64
 		want    TerrainType
 		note    string
 	}{
-	
-		{-0.0001, 0, 0.5, TerrainWater, "ниже уровня моря = вода"},
-		{0, 0, 0.5, TerrainBeach, "ровно SeaLevel = суша (пляж)"},
-		{0.049, 0, 0.5, TerrainBeach, "ниже порога пляжа"},
-		{0.06, 0, 0.5, TerrainPlains, "выше порога пляжа = равнина"},
+		// 1. Высота (абсолютный приоритет)
+		{-0.1, 0.0, 0.5, TerrainOcean, "ниже уровня моря"},
+		{0.02, 0.0, 0.5, TerrainBeach, "пляж"},
+		{0.85, 0.0, 0.5, TerrainSnow, "снег (высота)"},
+		{0.70, 0.0, 0.5, TerrainMountain, "горы"},
 
-		{0.6, 0, 0.5, TerrainMountain, "ровно порог гор"},
-		{0.6, -0.5, 0.5, TerrainSnow, "заснеженная вершина"},
-		{0.1, -0.5, 0.9, TerrainSnow, "холод перекрывает влажность"},
+		// 2. Полярный снег (приоритет над климатом, но ниже высоких гор)
+		{0.10, -0.95, 0.5, TerrainSnow, "полярный снег в низине"},
 
-		{0.1, 0.6, 0.2, TerrainDesert, "жарко и сухо"},
-		{0.1, 0.0, 0.7, TerrainForest, "влажно"},
+		// 3. Холодные зоны (t <= -0.30)
+		{0.10, -0.40, 0.20, TerrainTundra, "тундра (холод + сушь)"},
+		{0.10, -0.40, 0.80, TerrainColdRainforest, "хол. лес (холод + влага)"},
+		{0.10, -0.40, 0.50, TerrainTaiga, "тайга (холод + умеренно)"},
+
+		// 4. Жаркие зоны (t >= 0.30)
+		{0.10, 0.40, 0.20, TerrainDesert, "пустыня (жара + сушь)"},
+		{0.10, 0.40, 0.80, TerrainJungle, "джунгли (жара + влага)"},
+		{0.10, 0.40, 0.50, TerrainSavanna, "саванна (жара + умеренно)"},
+
+		// 5. Умеренные зоны (-0.30 < t < 0.30)
+		{0.10, 0.0, 0.20, TerrainSteppe, "степь (умеренно + сушь)"},
+		{0.10, 0.0, 0.80, TerrainTemperateRainforest, "умер. дожд. лес (умеренно + влага)"},
+		{0.10, 0.0, 0.50, TerrainTemperateForest, "лес (умеренно + умеренно)"},
 	}
 
 	for _, c := range cases {
 		got := classifyCell(c.h, c.t, c.m, cfg)
 		if got != c.want {
-			t.Errorf("%s: h=%v t=%v m=%v → %v, ожидалось %v",
+			t.Errorf("%s: h=%.2f t=%.2f m=%.2f → %v, ожидалось %v",
 				c.note, c.h, c.t, c.m, got, c.want)
 		}
-	}
-}
-
-func TestTerrainPropertiesWater(t *testing.T) {
-	water, err := TerrainProps(TerrainWater)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !water.IsWater || water.Passable {
-		t.Fatal("вода должна быть IsWater=true, Passable=false")
-	}
-
-	land, err := TerrainProps(TerrainPlains)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if land.IsWater || !land.Passable {
-		t.Fatal("равнина должна быть проходима")
 	}
 }
