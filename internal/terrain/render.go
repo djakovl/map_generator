@@ -6,11 +6,10 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 )
 
-func ExportPNG(world World, types []TerrainType, path string) (err error) {
+func ExportPNG(world World, types []TerrainType, path string, workers int) (err error) {
 	expectedLen := world.Width * world.Height
 	if len(types) != expectedLen {
 		return fmt.Errorf("несоответствие размеров: типы=%d, ожидаемо=%d", len(types), expectedLen)
@@ -18,7 +17,7 @@ func ExportPNG(world World, types []TerrainType, path string) (err error) {
 
 	img := image.NewRGBA(image.Rect(0, 0, world.Width, world.Height))
 
-	numWorkers := runtime.NumCPU()
+	numWorkers := workers
 	if numWorkers < 1 {
 		numWorkers = 1
 	}

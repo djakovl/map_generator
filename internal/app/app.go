@@ -32,6 +32,7 @@ func (application *App) Run() error {
 	}
 
 	classConfig := terrain.DefaultClassifyConfig(application.Config.SeaLevel)
+	classConfig.Workers = application.Config.Workers
 	types, err := terrain.Classify(world, classConfig)
 	if err != nil {
 		return fmt.Errorf("классификация: %w", err)
@@ -62,7 +63,7 @@ func (application *App) Run() error {
 	}
 
 	if application.PNGPath != "" {
-		if err := terrain.ExportPNG(world, types, application.PNGPath); err != nil {
+		if err := terrain.ExportPNG(world, types, application.PNGPath, application.Config.Workers); err != nil {
 			return fmt.Errorf("экспорт PNG: %w", err)
 		}
 	}

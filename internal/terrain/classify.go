@@ -3,7 +3,6 @@ package terrain
 import (
 	"fmt"
 	"image/color"
-	"runtime"
 	"sync"
 )
 
@@ -67,6 +66,7 @@ type ClassifyConfig struct {
 	HotTemp       float64
 	DryMoist      float64
 	WetMoist      float64
+	Workers       int
 }
 
 func DefaultClassifyConfig(seaLevel float64) ClassifyConfig {
@@ -80,6 +80,7 @@ func DefaultClassifyConfig(seaLevel float64) ClassifyConfig {
 		HotTemp:       0.15,
 		DryMoist:      0.40,
 		WetMoist:      0.50,
+		Workers:       1,
 	}
 }
 
@@ -94,7 +95,7 @@ func Classify(world World, cfg ClassifyConfig) ([]TerrainType, error) {
 	types := make([]TerrainType, len(world.Elevation))
 
 	
-	numWorkers := runtime.NumCPU()
+	numWorkers := cfg.Workers
 	if numWorkers < 1 {
 		numWorkers = 1
 	}
