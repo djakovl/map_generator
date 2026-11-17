@@ -27,6 +27,7 @@ type App struct {
 	Road        road.CostConfig
 	Pairs       int
 
+	View         terrain.View
 	PNGPath      string
 	DebugOverlay bool
 }
@@ -46,8 +47,7 @@ func (application *App) Run() error {
 		return fmt.Errorf("классификация: %w", err)
 	}
 
-
-	application.View = terrain.ClassifiedWorldView{
+	application.View = terrain.ClassifiedView{
 		World:    world,
 		Types:    types,
 		SeaLevel: application.Config.SeaLevel,

@@ -84,7 +84,6 @@ func DefaultClassifyConfig(seaLevel float64) ClassifyConfig {
 	}
 }
 
-
 func Classify(world World, cfg ClassifyConfig) ([]TerrainType, error) {
 	if len(world.Elevation) != world.Width*world.Height ||
 		len(world.Temperature) != len(world.Elevation) ||
@@ -94,12 +93,10 @@ func Classify(world World, cfg ClassifyConfig) ([]TerrainType, error) {
 
 	types := make([]TerrainType, len(world.Elevation))
 
-	
 	numWorkers := cfg.Workers
 	if numWorkers < 1 {
 		numWorkers = 1
 	}
-
 
 	chunkSize := len(types) / numWorkers
 	if chunkSize < 1 {
@@ -108,13 +105,12 @@ func Classify(world World, cfg ClassifyConfig) ([]TerrainType, error) {
 
 	var wg sync.WaitGroup
 
-
 	for workerID := 0; workerID < numWorkers; workerID++ {
 		wg.Add(1)
 		start := workerID * chunkSize
 		end := start + chunkSize
 		if workerID == numWorkers-1 {
-			end = len(types) 
+			end = len(types)
 		}
 
 		go func(start, end int) {
@@ -129,7 +125,6 @@ func Classify(world World, cfg ClassifyConfig) ([]TerrainType, error) {
 			}
 		}(start, end)
 	}
-
 
 	wg.Wait()
 
@@ -151,11 +146,9 @@ func classifyCell(h, t, m float64, cfg ClassifyConfig) TerrainType {
 		return TerrainMountain
 	}
 
-	
 	if t <= cfg.PolarSnowTemp {
 		return TerrainSnow
 	}
-
 
 	isCold := t <= cfg.ColdTemp
 	isHot := t >= cfg.HotTemp
