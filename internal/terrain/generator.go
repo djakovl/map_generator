@@ -15,8 +15,8 @@ type Config struct {
 	Workers   int
 	Procs     int
 
-	ExtentX float64
-	ExtentY float64
+	ExtentX  float64
+	ExtentY  float64
 	SeaLevel float64
 
 	TemperatureMode string
@@ -25,12 +25,7 @@ type Config struct {
 	HeightNoise      NoiseConfig
 	TemperatureNoise NoiseConfig
 	MoistureNoise    NoiseConfig
-
-	SmoothingPasses int
 }
-
-
-
 
 func DefaultConfig() Config {
 	noise := NoiseConfig{
@@ -58,8 +53,6 @@ func DefaultConfig() Config {
 		HeightNoise:      noise,
 		TemperatureNoise: noise,
 		MoistureNoise:    noise,
-
-		SmoothingPasses: 2,
 	}
 }
 
@@ -71,9 +64,7 @@ func (config Config) Validate() error {
 	if config.Width <= 0 || config.Height <= 0 {
 		return fmt.Errorf("width и height должны быть положительными")
 	}
-	if config.SmoothingPasses < 0 {
-		return fmt.Errorf("smoothing-passes должен быть >= 0")
-	}
+
 	maxInt := int(^uint(0) >> 1)
 	if config.Width > maxInt/config.Height {
 		return fmt.Errorf("слишком большое количество клеток")
@@ -105,8 +96,8 @@ func (config Config) Validate() error {
 	}
 
 	fields := []struct {
-		name   string
-		noise  NoiseConfig
+		name  string
+		noise NoiseConfig
 	}{
 		{"height", config.HeightNoise},
 		{"temperature", config.TemperatureNoise},
@@ -143,6 +134,7 @@ type World struct {
 	Elevation   []float64
 	Temperature []float64
 	Moisture    []float64
+	LandShift   float64
 }
 
 type Timings struct {
@@ -170,10 +162,10 @@ func (generator *Generator) Profile() TerrainProfile {
 }
 
 func deriveSeed(seed int64, stream uint64) int64 {
-	value := uint64(seed) + stream*0x9e3779b97f4a7c15
+	value := uint64(seed) + stream*0x9e3779b97f4a7c15 // #nosec G115 -- SplitMix64 seed mix, uint wrap is intentional
 	value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9
 	value = (value ^ (value >> 27)) * 0x94d049bb133111eb
-	return int64(value ^ (value >> 31))
+	return int64(value ^ (value >> 31)) // #nosec G115 -- bit reinterpretation for seed, wrap is intentional
 }
 
 func NewGenerator(config Config) (*Generator, error) {
@@ -265,10 +257,6 @@ func (generator *Generator) GenerateElevation(output []float64) {
 
 				ridge := clamp(1-math.Abs(detail)*3.0, 0, 1)
 				peak := ridge * ridge * ridge * ridge
-
-				// Широкие поднятия с плавным выходом на постоянную
-				// добавку. Это ещё не полноценные плоские плато:
-				// поверх них остаются холмы и горы.
 				plateau := smooth01((region + 0.05) / 0.20)
 
 				height := profile.HeightOffset +
@@ -332,7 +320,7 @@ func (generator *Generator) GenerateMoisture(output []float64) {
 	})
 }
 
-func (generator *Generator) Generate() (World, Timings) {
+func (generator *Generator) Generate() (World, Timings, error) {
 	config := generator.config
 	count := config.Width * config.Height
 
@@ -350,18 +338,14 @@ func (generator *Generator) Generate() (World, Timings) {
 
 	start := time.Now()
 	generator.GenerateElevation(world.Elevation)
-	_, err := EnsureMinLand(world.Elevation, config.SeaLevel, 0.15)
-	if err != nil {
-		panic(err)
-	}
 
-	if config.SmoothingPasses > 0 {
-		smoothed, err := SmoothField(world.Elevation, config.Width, config.Height, config.SmoothingPasses)
-		if err != nil {
-			panic(err) 
-		}
-		copy(world.Elevation, smoothed)
+	shift, err := EnsureMinLand(world.Elevation, config.SeaLevel, 0.15)
+	if err != nil {
+		return World{}, Timings{}, fmt.Errorf(
+			"гарантия минимальной суши: %w", err,
+		)
 	}
+	world.LandShift = shift
 
 	timings.Elevation = time.Since(start)
 
@@ -374,5 +358,7 @@ func (generator *Generator) Generate() (World, Timings) {
 	timings.Moisture = time.Since(start)
 
 	timings.Total = time.Since(totalStart)
-	return world, timings
+	return world, timings, nil
 }
+
+func DeriveSeed(seed int64, stream uint64) int64 { return deriveSeed(seed, stream) }
