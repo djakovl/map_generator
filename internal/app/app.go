@@ -19,6 +19,9 @@ type App struct {
 	Exporter  export.Exporter
 	Output    io.Writer
 	Config    terrain.Config
+
+
+	PNGPath string
 }
 
 func (application *App) Run() error {
@@ -27,6 +30,13 @@ func (application *App) Run() error {
 	world, timings, err := application.Generator.Generate()
 	if err != nil {
 		return fmt.Errorf("генерация карты: %w", err)
+	}
+
+
+	classConfig := terrain.DefaultClassifyConfig(application.Config.SeaLevel)
+	types, err := terrain.Classify(world, classConfig)
+	if err != nil {
+		return fmt.Errorf("классификация: %w", err)
 	}
 
 	if err := application.report(world, timings); err != nil {
@@ -38,6 +48,7 @@ func (application *App) Run() error {
 			{Name: "высота", File: "height.csv", Values: world.Elevation},
 			{Name: "температура", File: "temperature.csv", Values: world.Temperature},
 			{Name: "влажность", File: "moisture.csv", Values: world.Moisture},
+			{Name: "местность", File: "terrain.csv", Values: terrainTypeToFloat(types)},
 		}
 
 		if err := application.Exporter.Export(
@@ -47,5 +58,20 @@ func (application *App) Run() error {
 		}
 	}
 
+	if application.PNGPath != "" {
+		if err := terrain.ExportPNG(world, types, application.PNGPath); err != nil {
+			return fmt.Errorf("экспорт PNG: %w", err)
+		}
+	}
+
 	return nil
+}
+
+
+func terrainTypeToFloat(types []terrain.TerrainType) []float64 {
+	result := make([]float64, len(types))
+	for index, value := range types {
+		result[index] = float64(value)
+	}
+	return result
 }

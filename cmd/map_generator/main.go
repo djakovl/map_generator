@@ -29,6 +29,7 @@ func run() error {
 	flag.IntVar(&config.ChunkSize, "chunk-size", config.ChunkSize, "Размер чанка")
 	flag.IntVar(&config.Workers, "workers", config.Workers, "Количество работников")
 	flag.IntVar(&config.Procs, "procs", config.Procs, "GOMAXPROCS")
+	flag.IntVar(&config.SmoothingPasses, "smooth-passes", config.SmoothingPasses, "Количество проходов сглаживания высоты")
 
 	flag.Float64Var(&config.ExtentX, "extent-x", config.ExtentX, "Размер области по X")
 	flag.Float64Var(&config.ExtentY, "extent-y", config.ExtentY, "Размер области по Y")
@@ -42,6 +43,10 @@ func run() error {
 		&config.HeightCooling, "height-cooling",
 		config.HeightCooling, "Понижение температуры с высотой",
 	)
+
+	
+	var pngPath string
+	flag.StringVar(&pngPath, "png", pngPath, "Путь для сохранения карты в формате PNG")
 
 	octaves := config.HeightNoise.Octaves
 	flag.IntVar(&octaves, "octaves", octaves, "Число октав для всех полей")
@@ -77,6 +82,7 @@ func run() error {
 		Exporter:  exporter,
 		Output:    os.Stdout,
 		Config:    config,
+		PNGPath:   pngPath,
 	}
 
 	if err := application.Run(); err != nil {
@@ -85,6 +91,9 @@ func run() error {
 
 	if exportCSV {
 		fmt.Printf("Матрицы сохранены в %s\n", outputDir)
+	}
+	if pngPath != "" {
+		fmt.Printf("Карта сохранена в %s\n", pngPath)
 	}
 
 	return nil
