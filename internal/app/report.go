@@ -6,6 +6,8 @@ import (
 	"math"
 	"runtime"
 
+	"map_generator/internal/road"
+	"map_generator/internal/settlement"
 	"map_generator/internal/terrain"
 )
 
@@ -151,4 +153,21 @@ func (writer *reportWriter) printElevationDistribution(
 		100*float64(atLimit)/total,
 		atLimit,
 	)
+}
+
+func (application *App) reportObjects(
+	placed settlement.Result,
+	routes []road.Road,
+	pairs []road.Pair,
+) error {
+	writer := &reportWriter{output: application.Output}
+
+	writer.printf("\nПоселений: %d из %d\n", placed.Placed, placed.Requested)
+	if placed.Exhausted {
+		writer.printf("Внимание: размещено меньше, чем запрошено\n")
+	}
+	writer.printf("Пар выбрано: %d\n", len(pairs))
+	writer.printf("Маршрутов построено: %d из %d\n", len(routes), len(pairs))
+
+	return writer.err
 }

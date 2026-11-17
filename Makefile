@@ -46,7 +46,7 @@ sec:
 build: 
 	@echo "🏗️ Сборка бинарного файла..."
 	mkdir -p bin
-	$(GOBUILD) ./...
+	$(GOBUILD) -o bin/map_generator ./cmd/map_generator
 	@echo "🎉 Сборка успешно завершена!"
 
 clean:

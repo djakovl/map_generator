@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"map_generator/internal/export"
+	"map_generator/internal/road"
+	"map_generator/internal/settlement"
 	"map_generator/internal/terrain"
 )
 
@@ -185,5 +187,61 @@ func TestRunWithPNGExport(t *testing.T) {
 	}
 	if info.Size() == 0 {
 		t.Fatal("PNG пустой")
+	}
+}
+
+func TestRunWithSettlementsAndRoads(t *testing.T) {
+	cfg := terrain.DefaultConfig()
+	cfg.Width, cfg.Height = 256, 256
+	cfg.ChunkSize = 64
+
+	gen, err := terrain.NewGenerator(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	application := App{
+		Generator: gen,
+		Output:    new(bytes.Buffer),
+		Config:    cfg,
+		Settlement: settlement.Config{
+			Count: 8, MinDistance: 4, MaxAttempts: 10000, Seed: cfg.Seed,
+		},
+		Suitability: settlement.Suitability{
+			MinElevation: cfg.SeaLevel, MaxElevation: 1, MaxSlope: 0.5,
+		},
+		Road:  road.CostConfig{SlopeWeight: 2.0},
+		Pairs: 2,
+	}
+
+	if err := application.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	report := application.Output.(*bytes.Buffer).String()
+	for _, fragment := range []string{
+		"Поселений:",
+		"Пар выбрано:",
+		"Маршрутов построено:",
+	} {
+		if !bytes.Contains([]byte(report), []byte(fragment)) {
+			t.Fatalf("в отчёте нет фрагмента %q:\n%s", fragment, report)
+		}
+	}
+}
+
+func TestRunWithInvalidSettlementConfig(t *testing.T) {
+	cfg := terrain.DefaultConfig()
+	cfg.Width, cfg.Height = 64, 64
+	gen, _ := terrain.NewGenerator(cfg)
+
+	application := App{
+		Generator:  gen,
+		Output:     new(bytes.Buffer),
+		Config:     cfg,
+		Settlement: settlement.Config{Count: 5, MaxAttempts: 0},
+	}
+	if err := application.Run(); err == nil {
+		t.Fatal("ожидалась ошибка при MaxAttempts=0")
 	}
 }
