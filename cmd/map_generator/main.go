@@ -44,7 +44,6 @@ func run() error {
 		config.HeightCooling, "Понижение температуры с высотой",
 	)
 
-	
 	var pngPath string
 	flag.StringVar(&pngPath, "png", pngPath, "Путь для сохранения карты в формате PNG")
 

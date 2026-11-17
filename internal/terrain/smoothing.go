@@ -2,7 +2,6 @@ package terrain
 
 import "fmt"
 
-
 func SmoothField(src []float64, width, height, passes int) ([]float64, error) {
 	if width <= 0 || height <= 0 {
 		return nil, fmt.Errorf("неверные размеры поля: %dx%d", width, height)
@@ -13,7 +12,6 @@ func SmoothField(src []float64, width, height, passes int) ([]float64, error) {
 	if passes < 0 {
 		return nil, fmt.Errorf("количество проходов не может быть отрицательным")
 	}
-
 
 	a := make([]float64, len(src))
 	copy(a, src)
@@ -50,7 +48,7 @@ func SmoothField(src []float64, width, height, passes int) ([]float64, error) {
 				b[y*width+x] = sum / float64(count)
 			}
 		}
-		
+
 		a, b = b, a
 	}
 

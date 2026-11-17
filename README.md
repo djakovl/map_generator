@@ -32,6 +32,12 @@
 - чанкование (квадрат/строка)
 
 
+Команда запуска
+```bash
+go run ./cmd/map_generator -width 2096 -height 2096 -temperature-mode latitude -smooth-passes 1 -png map.png
+```
+
+
 ## 1. Объём и ответственность
 
 | Участник | Ответственность | Результат |

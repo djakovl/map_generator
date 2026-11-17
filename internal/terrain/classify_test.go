@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-
 func TestV3TerrainProperties(t *testing.T) {
-	
+
 	ocean, err := TerrainProps(TerrainOcean)
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +18,6 @@ func TestV3TerrainProperties(t *testing.T) {
 		t.Fatal("неверный цвет океана")
 	}
 
-	
 	forest, err := TerrainProps(TerrainTemperateForest)
 	if err != nil {
 		t.Fatal(err)
@@ -28,22 +26,20 @@ func TestV3TerrainProperties(t *testing.T) {
 		t.Fatal("лес должен быть сушей, проходимым и иметь MoveCost > 0")
 	}
 
-	
 	_, err = TerrainProps(99)
 	if err == nil {
 		t.Fatal("ожидалась ошибка при запросе несуществующего кода местности (99)")
 	}
 }
 
-
 func TestWhittakerClassification(t *testing.T) {
-	
+
 	cfg := ClassifyConfig{
 		SeaLevel:      0.0,
 		BeachBand:     0.05,
 		MountainLevel: 0.60,
 		SnowLevel:     0.80,
-		PolarSnowTemp: -0.90, 
+		PolarSnowTemp: -0.90,
 		ColdTemp:      -0.30,
 		HotTemp:       0.30,
 		DryMoist:      0.30,
@@ -55,13 +51,12 @@ func TestWhittakerClassification(t *testing.T) {
 		want    TerrainType
 		note    string
 	}{
-	
+
 		{-0.1, 0.0, 0.5, TerrainOcean, "ниже уровня моря"},
 		{0.02, 0.0, 0.5, TerrainBeach, "пляж"},
 		{0.85, 0.0, 0.5, TerrainSnow, "снег (высота)"},
 		{0.70, 0.0, 0.5, TerrainMountain, "горы"},
 
-		
 		{0.10, -0.95, 0.5, TerrainSnow, "полярный снег в низине"},
 
 		{0.10, -0.40, 0.20, TerrainTundra, "тундра (холод + сушь)"},

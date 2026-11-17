@@ -142,7 +142,6 @@ func TestRunPropagatesExportError(t *testing.T) {
 	}
 }
 
-
 func TestRunWithCSVExporter(t *testing.T) {
 	generator := &fakeGenerator{world: testWorld()}
 
