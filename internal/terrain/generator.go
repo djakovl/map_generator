@@ -25,6 +25,8 @@ type Config struct {
 	HeightNoise      NoiseConfig
 	TemperatureNoise NoiseConfig
 	MoistureNoise    NoiseConfig
+
+	SmoothingPasses int
 }
 
 func DefaultConfig() Config {
@@ -53,6 +55,8 @@ func DefaultConfig() Config {
 		HeightNoise:      noise,
 		TemperatureNoise: noise,
 		MoistureNoise:    noise,
+
+		SmoothingPasses: 2,
 	}
 }
 
@@ -71,6 +75,10 @@ func (config Config) Validate() error {
 	}
 	if config.Width*config.Height > maxInt/8 {
 		return fmt.Errorf("слишком большой размер массива")
+	}
+
+	if config.SmoothingPasses < 0 {
+		return fmt.Errorf("smoothing-passes должен быть >= 0")
 	}
 
 	if config.ChunkSize <= 0 || config.Workers <= 0 || config.Procs <= 0 {
@@ -162,10 +170,10 @@ func (generator *Generator) Profile() TerrainProfile {
 }
 
 func deriveSeed(seed int64, stream uint64) int64 {
-	value := uint64(seed) + stream*0x9e3779b97f4a7c15 // #nosec G115 -- SplitMix64 seed mix, uint wrap is intentional
+	value := uint64(seed) + stream*0x9e3779b97f4a7c15 
 	value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9
 	value = (value ^ (value >> 27)) * 0x94d049bb133111eb
-	return int64(value ^ (value >> 31)) // #nosec G115 -- bit reinterpretation for seed, wrap is intentional
+	return int64(value ^ (value >> 31)) 
 }
 
 func NewGenerator(config Config) (*Generator, error) {
@@ -346,6 +354,20 @@ func (generator *Generator) Generate() (World, Timings, error) {
 		)
 	}
 	world.LandShift = shift
+
+
+	if config.SmoothingPasses > 0 {
+		smoothed, err := SmoothField(
+			world.Elevation, config.Width, config.Height,
+			config.SmoothingPasses,
+		)
+		if err != nil {
+			return World{}, Timings{}, fmt.Errorf(
+				"сглаживание высоты: %w", err,
+			)
+		}
+		copy(world.Elevation, smoothed)
+	}
 
 	timings.Elevation = time.Since(start)
 

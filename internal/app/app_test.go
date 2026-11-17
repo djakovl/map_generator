@@ -11,7 +11,6 @@ import (
 	"map_generator/internal/terrain"
 )
 
-// fakeGenerator — заглушка генератора: фиксированный мир без шума.
 type fakeGenerator struct {
 	world terrain.World
 	err   error
@@ -25,7 +24,6 @@ func (generator *fakeGenerator) Generate() (terrain.World, terrain.Timings, erro
 	return generator.world, terrain.Timings{}, generator.err
 }
 
-// captureExporter — заглушка экспортёра: запоминает, что ей передали.
 type captureExporter struct {
 	matrices []export.Matrix
 	width    int
@@ -77,7 +75,6 @@ func TestRunReportsAndExports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Отчёт содержит ключевые секции.
 	report := application.Output.(*bytes.Buffer).String()
 	for _, fragment := range []string{
 		"Профиль: test",
@@ -90,11 +87,10 @@ func TestRunReportsAndExports(t *testing.T) {
 		}
 	}
 
-	// Экспортёр получил все три поля и размеры мира.
-	if len(exporter.matrices) != 3 {
-		t.Fatalf("полей %d, ожидалось 3", len(exporter.matrices))
+	if len(exporter.matrices) != 4 {
+		t.Fatalf("полей %d, ожидалось 4", len(exporter.matrices))
 	}
-	names := []string{"height.csv", "temperature.csv", "moisture.csv"}
+	names := []string{"height.csv", "temperature.csv", "moisture.csv", "terrain.csv"}
 	for index, expected := range names {
 		if exporter.matrices[index].File != expected {
 			t.Fatalf("файл %q, ожидался %q",
@@ -114,7 +110,6 @@ func TestRunWithoutExporterSkipsExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Сообщение об экспорте печатает main, а не App.
 	report := application.Output.(*bytes.Buffer).String()
 	if len(report) == 0 {
 		t.Fatal("отчёт пуст")
@@ -147,8 +142,7 @@ func TestRunPropagatesExportError(t *testing.T) {
 	}
 }
 
-// Интеграционный тест: настоящий CSV-экспортёр пишет файлы,
-// приложение их не теряет.
+
 func TestRunWithCSVExporter(t *testing.T) {
 	generator := &fakeGenerator{world: testWorld()}
 
@@ -168,9 +162,29 @@ func TestRunWithCSVExporter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, name := range []string{"height.csv", "temperature.csv", "moisture.csv"} {
+	for _, name := range []string{"height.csv", "temperature.csv", "moisture.csv", "terrain.csv"} {
 		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
 			t.Fatalf("файл %s не создан: %v", name, err)
 		}
+	}
+}
+
+func TestRunWithPNGExport(t *testing.T) {
+	generator := &fakeGenerator{world: testWorld()}
+
+	pngPath := filepath.Join(t.TempDir(), "map.png")
+	application := testApp(generator, nil)
+	application.PNGPath = pngPath
+
+	if err := application.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := os.Stat(pngPath)
+	if err != nil {
+		t.Fatalf("PNG не создан: %v", err)
+	}
+	if info.Size() == 0 {
+		t.Fatal("PNG пустой")
 	}
 }
