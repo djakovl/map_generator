@@ -40,9 +40,17 @@ func (application *App) Run() error {
 	}
 
 	classConfig := terrain.DefaultClassifyConfig(application.Config.SeaLevel)
+	classConfig.Workers = application.Config.Workers
 	types, err := terrain.Classify(world, classConfig)
 	if err != nil {
 		return fmt.Errorf("классификация: %w", err)
+	}
+
+
+	application.View = terrain.ClassifiedWorldView{
+		World:    world,
+		Types:    types,
+		SeaLevel: application.Config.SeaLevel,
 	}
 
 	if err := application.report(world, timings); err != nil {
@@ -84,15 +92,13 @@ func (application *App) Run() error {
 			{Name: "местность", File: "terrain.csv", Values: terrainTypeToFloat(types)},
 		}
 
-		if err := application.Exporter.Export(
-			matrices, world.Width, world.Height,
-		); err != nil {
+		if err := application.Exporter.Export(matrices, world.Width, world.Height); err != nil {
 			return err
 		}
 	}
 
 	if application.PNGPath != "" {
-		if err := terrain.ExportPNG(world, types, application.PNGPath); err != nil {
+		if err := terrain.ExportPNG(world, types, application.PNGPath, application.Config.Workers); err != nil {
 			return fmt.Errorf("экспорт PNG: %w", err)
 		}
 
@@ -108,8 +114,8 @@ func (application *App) Run() error {
 
 func terrainTypeToFloat(types []terrain.TerrainType) []float64 {
 	result := make([]float64, len(types))
-	for index, value := range types {
-		result[index] = float64(value)
+	for i, v := range types {
+		result[i] = float64(v)
 	}
 	return result
 }
