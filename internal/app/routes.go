@@ -31,38 +31,37 @@ func (application *App) buildRoutes(
 		parallel = 1
 	}
 
-	workers := make([]*road.Worker, parallel)
-	for i := range workers {
-		workers[i] = road.NewWorker(view.Width() * view.Height())
+	pool := make(chan *road.Worker, parallel)
+	for worker := 0; worker < parallel; worker++ {
+		pool <- road.NewWorker(view.Width() * view.Height())
 	}
 
 	routes := make([]road.Road, len(pairs))
 	found := make([]bool, len(pairs))
 
-	sem := make(chan struct{}, parallel)
 	var wg sync.WaitGroup
 
 	for i, p := range pairs {
-		i, p := i, p
 		wg.Add(1)
-		go func() {
+		go func(i int, p road.Pair) {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
 
-			w := workers[i%parallel]
+			worker := <-pool
+			defer func() { pool <- worker }()
+
 			a := findByID(placed.Settlements, p.A)
 			b := findByID(placed.Settlements, p.B)
 
-			path, ok := w.FindPath(view,
+			path, ok := worker.FindPath(view,
 				road.Point{X: a.X, Y: a.Y},
 				road.Point{X: b.X, Y: b.Y},
-				application.Road)
+				application.Road,
+			)
 			if ok {
 				routes[i] = road.Road{FromID: a.ID, ToID: b.ID, Path: path}
 				found[i] = true
 			}
-		}()
+		}(i, p)
 	}
 	wg.Wait()
 
