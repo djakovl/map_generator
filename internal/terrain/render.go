@@ -35,12 +35,12 @@ func init() {
 }
 
 const (
-	legendWidth      = 220
+	legendWidth      = 240 
 	legendItemHeight = 28
 	colorBoxSize     = 18
-	colorBoxPad      = 1   // толщина рамки вокруг квадратика
-	textOffsetX      = 40
-	textOffsetY      = 14  // ← ИСПРАВЛЕНО: было 20, стало 14 (baseline по центру квадратика)
+	colorBoxPad      = 1
+	textOffsetX      = 45  
+	textOffsetY      = 18  
 )
 
 var terrainNamesRu = map[TerrainType]string{
@@ -133,14 +133,16 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 		}
 	}
 
-	// Отступ сверху, чтобы легенда была по центру вертикально
-	totalLegendHeight := int(terrainTypeCount)*legendItemHeight
+	totalItems := int(terrainTypeCount) + 2
+	totalLegendHeight := totalItems * legendItemHeight
+	
 	startY := (height - totalLegendHeight) / 2
 	if startY < 10 {
 		startY = 10
 	}
 
 	yOffset := startY
+
 	for i := 0; i < int(terrainTypeCount); i++ {
 		terrainType := TerrainType(i)
 		props, err := TerrainProps(terrainType)
@@ -148,7 +150,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 			continue
 		}
 
-		// ← НОВОЕ: чёрная рамка вокруг квадратика (чтобы белый снег был виден)
+
 		borderColor := color.RGBA{80, 80, 80, 255}
 		for dy := 0; dy < colorBoxSize+2*colorBoxPad; dy++ {
 			for dx := 0; dx < colorBoxSize+2*colorBoxPad; dx++ {
@@ -157,15 +159,13 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 				if y < 0 || y >= height {
 					continue
 				}
-				// рисуем только границы
-				if dy == 0 || dy == colorBoxSize+2*colorBoxPad-1 ||
-					dx == 0 || dx == colorBoxSize+2*colorBoxPad-1 {
+				if dy == 0 || dy == colorBoxSize+2*colorBoxPad-1 || dx == 0 || dx == colorBoxSize+2*colorBoxPad-1 {
 					img.Set(x, y, borderColor)
 				}
 			}
 		}
 
-		// Цветной квадратик
+
 		for dy := 0; dy < colorBoxSize; dy++ {
 			for dx := 0; dx < colorBoxSize; dx++ {
 				x := mapWidth + 10 + dx
@@ -180,20 +180,60 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 		if !ok {
 			name = props.Name
 		}
-		drawText(img, mapWidth+textOffsetX, yOffset+textOffsetY, name, color.Black)
+		
+		drawer := &font.Drawer{
+			Dst:  img,
+			Src:  image.NewUniform(color.Black),
+			Face: legendFace,
+			Dot:  fixed.Point26_6{X: fixed.I(mapWidth + textOffsetX), Y: fixed.I(yOffset + textOffsetY)},
+		}
+		drawer.DrawString(name)
 
 		yOffset += legendItemHeight
 	}
+
+	sepY := yOffset + 6
+	for x := mapWidth + 10; x < mapWidth+legendWidth-10; x++ {
+		img.Set(x, sepY, color.RGBA{200, 200, 200, 255})
+	}
+	yOffset += 12 
+
+	drawLegendObjectItem(img, mapWidth, yOffset, "Дорога", func(x, y int) {
+
+		for dy := 0; dy < 4; dy++ {
+			for dx := 0; dx < 18; dx++ {
+				img.Set(x+dx, y+dy, color.RGBA{0, 0, 0, 255})
+			}
+		}
+	})
+	yOffset += legendItemHeight
+
+	drawLegendObjectItem(img, mapWidth, yOffset, "Поселение", func(x, y int) {
+		for dy := 0; dy < 6; dy++ {
+			for dx := 0; dx < 6; dx++ {
+				if dx == 0 || dx == 5 || dy == 0 || dy == 5 {
+					img.Set(x+dx, y+dy, color.RGBA{80, 0, 0, 255})
+				} else {
+					img.Set(x+dx, y+dy, color.RGBA{255, 0, 0, 255}) 
+				}
+			}
+		}
+	})
 }
 
-func drawText(img *image.RGBA, x, y int, text string, c color.Color) {
+func drawLegendObjectItem(img *image.RGBA, mapWidth, yOffset int, name string, drawIcon func(x, y int)) {
+	iconX := mapWidth + 10
+	iconY := yOffset + 11 
+
+	drawIcon(iconX, iconY)
+
 	drawer := &font.Drawer{
 		Dst:  img,
-		Src:  image.NewUniform(c),
+		Src:  image.NewUniform(color.Black),
 		Face: legendFace,
-		Dot:  fixed.Point26_6{X: fixed.I(x), Y: fixed.I(y)},
+		Dot:  fixed.Point26_6{X: fixed.I(mapWidth + textOffsetX), Y: fixed.I(yOffset + textOffsetY)},
 	}
-	drawer.DrawString(text)
+	drawer.DrawString(name)
 }
 
 func min(a, b int) int {
