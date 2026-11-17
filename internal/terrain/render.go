@@ -49,7 +49,6 @@ func ExportPNG(world World, types []TerrainType, path string) (err error) {
 
 	wg.Wait()
 
-
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
 		return fmt.Errorf("открытие каталога %s: %w", filepath.Dir(path), err)

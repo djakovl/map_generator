@@ -170,10 +170,10 @@ func (generator *Generator) Profile() TerrainProfile {
 }
 
 func deriveSeed(seed int64, stream uint64) int64 {
-	value := uint64(seed) + stream*0x9e3779b97f4a7c15 
+	value := uint64(seed) + stream*0x9e3779b97f4a7c15 // #nosec G115 -- SplitMix64 seed mix, uint wrap is intentional
 	value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9
 	value = (value ^ (value >> 27)) * 0x94d049bb133111eb
-	return int64(value ^ (value >> 31)) 
+	return int64(value ^ (value >> 31)) // #nosec G115 -- SplitMix64 seed mix, uint wrap is intentional
 }
 
 func NewGenerator(config Config) (*Generator, error) {
@@ -354,7 +354,6 @@ func (generator *Generator) Generate() (World, Timings, error) {
 		)
 	}
 	world.LandShift = shift
-
 
 	if config.SmoothingPasses > 0 {
 		smoothed, err := SmoothField(

@@ -20,7 +20,6 @@ type App struct {
 	Output    io.Writer
 	Config    terrain.Config
 
-
 	PNGPath string
 }
 
@@ -31,7 +30,6 @@ func (application *App) Run() error {
 	if err != nil {
 		return fmt.Errorf("генерация карты: %w", err)
 	}
-
 
 	classConfig := terrain.DefaultClassifyConfig(application.Config.SeaLevel)
 	types, err := terrain.Classify(world, classConfig)
@@ -66,7 +64,6 @@ func (application *App) Run() error {
 
 	return nil
 }
-
 
 func terrainTypeToFloat(types []terrain.TerrainType) []float64 {
 	result := make([]float64, len(types))
