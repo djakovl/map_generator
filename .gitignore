@@ -27,6 +27,7 @@ go.work.sum
 
 # env file
 .env
+*.json
 *.png
 *.csv
 # Editor/IDE
