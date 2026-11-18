@@ -35,12 +35,12 @@ func init() {
 }
 
 const (
-	legendWidth      = 240 
+	legendWidth      = 240
 	legendItemHeight = 28
 	colorBoxSize     = 18
 	colorBoxPad      = 1
-	textOffsetX      = 45  
-	textOffsetY      = 18  
+	textOffsetX      = 45
+	textOffsetY      = 18
 )
 
 var terrainNamesRu = map[TerrainType]string{
@@ -135,7 +135,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 
 	totalItems := int(terrainTypeCount) + 2
 	totalLegendHeight := totalItems * legendItemHeight
-	
+
 	startY := (height - totalLegendHeight) / 2
 	if startY < 10 {
 		startY = 10
@@ -149,7 +149,6 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 		if err != nil {
 			continue
 		}
-
 
 		borderColor := color.RGBA{80, 80, 80, 255}
 		for dy := 0; dy < colorBoxSize+2*colorBoxPad; dy++ {
@@ -165,7 +164,6 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 			}
 		}
 
-
 		for dy := 0; dy < colorBoxSize; dy++ {
 			for dx := 0; dx < colorBoxSize; dx++ {
 				x := mapWidth + 10 + dx
@@ -180,7 +178,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 		if !ok {
 			name = props.Name
 		}
-		
+
 		drawer := &font.Drawer{
 			Dst:  img,
 			Src:  image.NewUniform(color.Black),
@@ -196,7 +194,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 	for x := mapWidth + 10; x < mapWidth+legendWidth-10; x++ {
 		img.Set(x, sepY, color.RGBA{200, 200, 200, 255})
 	}
-	yOffset += 12 
+	yOffset += 12
 
 	drawLegendObjectItem(img, mapWidth, yOffset, "Дорога", func(x, y int) {
 
@@ -214,7 +212,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 				if dx == 0 || dx == 5 || dy == 0 || dy == 5 {
 					img.Set(x+dx, y+dy, color.RGBA{80, 0, 0, 255})
 				} else {
-					img.Set(x+dx, y+dy, color.RGBA{255, 0, 0, 255}) 
+					img.Set(x+dx, y+dy, color.RGBA{255, 0, 0, 255})
 				}
 			}
 		}
@@ -223,7 +221,7 @@ func drawLegend(img *image.RGBA, height int, mapWidth int) {
 
 func drawLegendObjectItem(img *image.RGBA, mapWidth, yOffset int, name string, drawIcon func(x, y int)) {
 	iconX := mapWidth + 10
-	iconY := yOffset + 11 
+	iconY := yOffset + 11
 
 	drawIcon(iconX, iconY)
 
