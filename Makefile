@@ -5,9 +5,13 @@ GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
 GOFMT=$(GOCMD) fmt
 
-.PHONY: all prep deps-init fmt lint test vuln sec build clean
+FONT_DIR=internal/terrain/fonts
+FONT_FILE=$(FONT_DIR)/DejaVuSans.ttf
+SYSTEM_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
 
-all: clean prep deps-init fmt lint vuln sec test build
+.PHONY: all prep deps-init fmt lint test vuln sec build clean prepare-font
+
+all: clean prep prepare-font deps-init fmt lint vuln sec test build
 
 prep:
 	@echo "🔍 Проверка установленных утилит..."
@@ -16,8 +20,27 @@ prep:
 	@command -v gosec >/dev/null 2>&1 || (echo "❌ gosec не установлен." && exit 1)
 	@echo "✅ Все утилиты на месте!"
 
+prepare-font:
+	@echo "🔤 Подготовка шрифта для легенды..."
+	@if [ ! -f "$(SYSTEM_FONT)" ]; then \
+		echo "❌ Системный шрифт не найден: $(SYSTEM_FONT)"; \
+		echo "Установите пакет fonts-dejavu: sudo apt install fonts-dejavu"; \
+		exit 1; \
+	fi
+	@mkdir -p $(FONT_DIR)
+	@if [ ! -f "$(FONT_FILE)" ]; then \
+		echo "📥 Копирование шрифта из системы..."; \
+		cp $(SYSTEM_FONT) $(FONT_FILE); \
+		echo "✅ Шрифт скопирован в $(FONT_FILE)"; \
+	else \
+		echo "✅ Шрифт уже на месте: $(FONT_FILE)"; \
+	fi
+
 deps-init:
 	@echo "📦 Очистка и проверка зависимостей Go..."
+	@$(GOCMD) get golang.org/x/image/font >/dev/null 2>&1 || true
+	@$(GOCMD) get golang.org/x/image/font/opentype >/dev/null 2>&1 || true
+	@$(GOCMD) get golang.org/x/image/math/fixed >/dev/null 2>&1 || true
 	$(GOMOD) tidy
 	$(GOMOD) verify
 
@@ -43,7 +66,7 @@ sec:
 	@gosec -fmt json -out results.json -no-fail ./... || true
 	@gosec -fmt text ./...
 
-build: 
+build: prepare-font
 	@echo "🏗️ Сборка бинарного файла..."
 	mkdir -p bin
 	$(GOBUILD) -o bin/map_generator ./cmd/map_generator
@@ -54,4 +77,3 @@ clean:
 	$(GOCLEAN)
 	rm -f results.json
 	@echo "✨ Проект очищен!"
-
