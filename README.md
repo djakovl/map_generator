@@ -34,7 +34,7 @@
 
 Команда запуска
 ```bash
-go run ./cmd/map_generator -width 2096 -height 2096 -temperature-mode latitude -smooth-passes 1 -png map.png
+./bin/map_generator --width 8192 --height 8192 --seed 47 --procs 8 --workers 8 --settlements 50 --min-distance 400   --pairs 4 --png map.png --debug-overlay --chunk-size 64 --smooth-passes 2 --temperature-mode latitude
 ```
 
 
